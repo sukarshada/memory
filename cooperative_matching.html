@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>لعبة التطابق التعاونية</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        :root {
+            --primary: #FF6B9D;
+            --secondary: #4ECDC4;
+            --warm: #FFD93D;
+            --calm: #6C5CE7;
+            --happy: #2ED573;
+            --red: #FF6B6B;
+            --blue: #0984E3;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            animation: bounce 1s ease-in-out;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .setup-screen {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .setup-screen h2 {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .level-btn {
+            padding: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .level-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .level-btn:active {
+            transform: scale(0.95);
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .game-header {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .game-header h2 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .game-board.three-col {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #FF6B9D 0%, #FF8E72 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .card.flipped {
+            background: white;
+            color: #333;
+        }
+
+        .card.matched {
+            background: linear-gradient(135deg, #2ED573 0%, #1dd1a1 100%);
+            cursor: default;
+            animation: popOut 0.5s ease-out;
+        }
+
+        @keyframes popOut {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            animation: celebrateFloat 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes celebrateFloat {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -150px) scale(1.5);
+            }
+        }
+
+        .completion-screen {
+            display: none;
+            background: white;
+            border-radius: 16px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .completion-screen h2 {
+            font-size: 32px;
+            color: var(--happy);
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease-out;
+        }
+
+        .completion-message {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .emoji-celebration {
+            font-size: 80px;
+            margin: 20px 0;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            50% {
+                transform: rotate(20deg);
+            }
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #333;
+        }
+
+        .instructions {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .encouragement {
+            background: rgba(46, 213, 115, 0.1);
+            border: 2px solid var(--happy);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 18px;
+            color: var(--happy);
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🎮 لعبة التطابق التعاونية</h1>
+        <p>✨ نحن معاً نجد التطابقات - بدون منافسة، فقط متعة!</p>
+        <p style="font-size: 12px; margin-top: 10px; opacity: 0.8;">✏️ شدا عابد - علاج وظيفي</p>
+    </div>
+
+    <!-- SETUP SCREEN -->
+    <div id="setupScreen" class="setup-screen">
+        <h2>اختر مستوى اللعبة 🌟</h2>
+        <div class="level-grid">
+            <button class="level-btn" onclick="startGame(1)">
+                😊 سهل جداً<br>(6 أزواج)
+            </button>
+            <button class="level-btn" onclick="startGame(2)">
+                🎯 متوسط<br>(8 أزواج)
+            </button>
+            <button class="level-btn" onclick="startGame(3)">
+                🚀 صعب<br>(12 زوج)
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="game-screen">
+        <div class="instructions">
+            💡 اضغط على البطاقات لإيجاد الأزواج المتطابقة! نحن نعمل معاً 🤝
+        </div>
+
+        <div class="game-header">
+            <h2 id="levelTitle">لعبة التطابق</h2>
+            <div class="progress-text" id="progressText">0 من 0</div>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+
+        <div class="encouragement">
+            ⭐ أنتَ تقوم بعمل رائع!
+        </div>
+    </div>
+
+    <!-- COMPLETION SCREEN -->
+    <div id="completionScreen" class="completion-screen">
+        <h2>🎉 رائع! انتهينا! 🎉</h2>
+        <div class="emoji-celebration">🌈⭐💫</div>
+        <div class="completion-message">
+            لقد وجدت جميع الأزواج!<br>أنتَ نجم حقيقي! ⭐<br>
+            عملت بذكاء وجد مرة واحدة. رائع جداً!
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-secondary" onclick="goBack()">← رجوع للخيارات</button>
+            <button class="btn btn-primary" onclick="startGame(currentLevel)">🔄 لعب مرة أخرى</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const emojis = ['🌟', '🎨', '🎵', '🎪', '🎭', '🎯', '🎮', '🎲', '🎸', '🎺', '🎻', '🎳'];
+let cards = [];
+let flipped = [];
+let matched = 0;
+let totalPairs = 0;
+let currentLevel = 1;
+let gameActive = true;
+
+function startGame(level) {
+    currentLevel = level;
+    document.getElementById('setupScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+    document.getElementById('completionScreen').style.display = 'none';
+
+    // Determine number of pairs based on level
+    const pairCounts = [6, 8, 12];
+    totalPairs = pairCounts[level - 1];
+    matched = 0;
+    flipped = [];
+    gameActive = true;
+
+    // Update header
+    const levelNames = ['سهل جداً', 'متوسط', 'صعب'];
+    document.getElementById('levelTitle').textContent = `مستوى: ${levelNames[level - 1]}`;
+    updateProgress();
+
+    // Create game board
+    createBoard();
+}
+
+function createBoard() {
+    const board = document.getElementById('gameBoard');
+    board.innerHTML = '';
+    board.className = 'game-board';
+    
+    if (totalPairs === 12) {
+        board.classList.add('three-col');
+    }
+
+    // Create pairs
+    const selectedEmojis = emojis.slice(0, totalPairs);
+    cards = [...selectedEmojis, ...selectedEmojis];
+    
+    // Shuffle
+    cards = cards.sort(() => Math.random() - 0.5);
+
+    // Create card elements
+    cards.forEach((emoji, index) => {
+        const card = document.createElement('button');
+        card.className = 'card';
+        card.textContent = '?';
+        card.dataset.emoji = emoji;
+        card.dataset.index = index;
+        card.onclick = () => flipCard(card, index);
+        board.appendChild(card);
+    });
+}
+
+function flipCard(cardElement, index) {
+    if (!gameActive) return;
+    if (cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) return;
+    if (flipped.length >= 2) return;
+
+    cardElement.classList.add('flipped');
+    cardElement.textContent = cards[index];
+    flipped.push({ element: cardElement, emoji: cards[index], index });
+
+    if (flipped.length === 2) {
+        checkMatch();
+    }
+}
+
+function checkMatch() {
+    gameActive = false;
+    const [first, second] = flipped;
+    const isMatch = first.emoji === second.emoji;
+
+    setTimeout(() => {
+        if (isMatch) {
+            first.element.classList.add('matched');
+            second.element.classList.add('matched');
+            matched++;
+            celebrate();
+            updateProgress();
+
+            if (matched === totalPairs) {
+                endGame();
+            }
+        } else {
+            first.element.classList.remove('flipped');
+            second.element.classList.remove('flipped');
+            first.element.textContent = '?';
+            second.element.textContent = '?';
+        }
+
+        flipped = [];
+        gameActive = true;
+    }, 1000);
+}
+
+function celebrate() {
+    const emojis = ['🌟', '⭐', '✨', '🎉', '🎊'];
+    const celebration = document.createElement('div');
+    celebration.className = 'celebration';
+    celebration.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    document.body.appendChild(celebration);
+    setTimeout(() => celebration.remove(), 1000);
+}
+
+function updateProgress() {
+    document.getElementById('progressText').textContent = `${matched} من ${totalPairs}`;
+}
+
+function endGame() {
+    gameActive = false;
+    setTimeout(() => {
+        document.getElementById('gameScreen').style.display = 'none';
+        document.getElementById('completionScreen').style.display = 'block';
+    }, 500);
+}
+
+function goBack() {
+    document.getElementById('setupScreen').style.display = 'block';
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('completionScreen').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
